@@ -9,6 +9,13 @@ import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import FarmatodoLogo from "@/components/farmatodo-logo"
 
+// Tipo genérico para usuario (Firebase o JWT)
+export interface AppUser {
+  email: string | null
+  displayName?: string | null
+  authType: 'firebase' | 'jwt'
+}
+
 const BANCOS = [
   { id: "plaza", name: "Banco Plaza" },
   { id: "venezuela", name: "Banco de Venezuela" },
@@ -74,9 +81,19 @@ interface VenezuelaResponse {
   }
 }
 
-export default function SearchPage({ user }: { user: User }) {
+interface SearchPageProps {
+  user?: User
+  appUser?: AppUser
+  onLogout?: () => void
+}
+
+export default function SearchPage({ user, appUser, onLogout }: SearchPageProps) {
   const { toast } = useToast()
   const [selectedBank, setSelectedBank] = useState("plaza")
+  
+  // Obtener el email del usuario (Firebase o JWT)
+  const userEmail = user?.email || appUser?.email || "Usuario"
+  const authType = appUser?.authType || 'firebase'
   const [selectedAccount, setSelectedAccount] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
@@ -368,7 +385,11 @@ export default function SearchPage({ user }: { user: User }) {
   }
 
   const handleLogout = async () => {
-    await signOut(auth)
+    if (authType === 'jwt' && onLogout) {
+      onLogout()
+    } else {
+      await signOut(auth)
+    }
   }
   
   // Filtrar movimientos
@@ -397,7 +418,7 @@ export default function SearchPage({ user }: { user: User }) {
             <FarmatodoLogo className="w-20" />
           <div>
               <h1 className="text-lg font-bold text-[#003B71]">Portal de Validación de Transacciones</h1>
-              <p className="text-xs text-muted-foreground">{user.email}</p>
+              <p className="text-xs text-muted-foreground">{userEmail}</p>
             </div>
           </div>
           <Button
